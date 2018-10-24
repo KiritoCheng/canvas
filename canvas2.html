@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        #canvas {
+            border: 1px solid #aaaaaa;
+            display: block;
+            margin: 50px auto;
+        }
+    </style>
+</head>
+<body>
+<div id="canvas-warp">
+    <canvas id="canvas">
+        你的浏览器居然不支持Canvas！
+    </canvas>
+</div>
+<script>
+    var canvas = document.getElementById('canvas');
+
+    canvas.width = 800;
+    canvas.height = 400;
+
+    var ctx = canvas.getContext("2d");
+
+
+    var bx = 0, by = 0, speed = 1, aspeed = 1, snakeW = 1600, snakeH = 400;
+    function draw() {
+
+        function drawimage() {
+            ctx.fillStyle = "#B3E5FC";
+            ctx.fillRect(bx, by, snakeW, snakeH);
+        }
+
+        //阻碍
+        function drawgroup(BezierX, BezierY, groundX, groundH) {
+            ctx.beginPath();
+            ctx.moveTo(0, groundH);
+            ctx.lineTo(800, groundH);
+
+            //贝塞尔曲线
+            function drawBezier(BezierX, BezierY, groundX, groundXT) {
+                ctx.moveTo(groundX, groundH);
+                ctx.quadraticCurveTo(BezierX, BezierY, groundXT, groundH);
+            }
+
+            drawBezier(BezierX, BezierY, groundX, groundXT);
+            ctx.stroke();
+        }
+
+        //德卡斯特里奥算法
+        function DEcasterio(BezierX, BezierY, groundX, groundXT) {
+            var t = 0.5;
+            var DEcasterioX = Math.pow((1 - t), 2) * groundX + 2 * t * (1 - t) * BezierX + Math.pow(t, 2) * groundXT,
+                DEcasterioY = Math.pow((1 - t), 2) * groundH + 2 * t * (1 - t) * BezierY + Math.pow(t, 2) * groundH;
+            return [DEcasterioX, DEcasterioY]
+        }
+
+        //云
+        function cloud(cx, cy, cw, ch) {
+            ctx.beginPath();
+            ctx.fillStyle = "#fff";
+            ctx.arc(cx, cy, cw * 0.19, 0, 360, false);
+            ctx.arc(cx + cw * 0.08, cy - ch * 0.3, cw * 0.11, 0, 360, false);
+            ctx.arc(cx + cw * 0.3, cy - ch * 0.25, cw * 0.25, 0, 360, false);
+            ctx.arc(cx + cw * 0.6, cy, cw * 0.21, 0, 360, false);
+            ctx.arc(cx + cw * 0.3, cy - ch * 0.1, cw * 0.28, 0, 360, false);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        //轮子
+        function drawwheel(r, groundX, groundH) {
+            ctx.beginPath();
+            ctx.arc(groundX, groundH, r, 0, 2 * Math.PI);
+
+            ctx.moveTo(groundX + r, groundH);
+            ctx.lineTo(groundX - r, groundH);
+            ctx.moveTo(groundX, groundH + r);
+            ctx.lineTo(groundX, groundH - r);
+            ctx.moveTo(groundX + Math.sin(45 * Math.PI / 180) * r, groundH - Math.sin(45 * Math.PI / 180) * r);
+            ctx.lineTo(groundX - Math.sin(45 * Math.PI / 180) * r, groundH + Math.sin(45 * Math.PI / 180) * r);
+            ctx.moveTo(groundX - Math.sin(45 * Math.PI / 180) * r, groundH - Math.sin(45 * Math.PI / 180) * r);
+            ctx.lineTo(groundX + Math.sin(45 * Math.PI / 180) * r, groundH + Math.sin(45 * Math.PI / 180) * r);
+
+            ctx.stroke();
+        }
+
+        var cx1 = 600, cy1 = 160;   //云1
+        var cx2 = 400, cy2 = 80;    //云2
+        var cw = 80, ch = 60;
+
+        //控制点(106,260)
+        var groundX = [], BezierX = [];
+        var BezierX1 = 606, BezierY1 = 260, groundX1 = 620;
+        for (var i = 0; i < 5; i++) {
+            groundX[i] = 620 - (i + 1) * (620 / 6);
+            groundXT[i] = groundX[i] - 20;
+            BezierX[i] = groundX[i] - 14;
+        }
+
+
+        var groundH = 350;
+        var groundXT = groundX1 - 20, angel = 0;
+        var r = (groundH - DEcasterio(BezierX1, BezierY1, groundX1, groundXT)[1]) / 2;
+
+        function run() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawimage();
+
+            function cloudrun() {
+                cx1 <= 0 ? cx1 = 800 : cx1;
+                cx2 <= 0 ? cx2 = 800 : cx2;
+                cloud(cx1, cy1, cw, ch);
+                cloud(cx2, cy2, cw, ch);
+                cx1 -= 3;
+                cx2 -= 1;
+            }
+
+            function grouprun() {
+                groundX1--;
+                groundXT--;
+
+                for (var i = 0; i < 5; i++) {
+                    groundX[i]--;
+                    BezierX[i]--;
+                    drawgroup(BezierX1, BezierY1, groundX1, groundH, groundXT);
+                }
+
+            }
+
+            function wheelrun() {
+                ctx.save();
+                ctx.translate(100, groundH - r);
+                angel++;
+                ctx.rotate(angel * Math.PI / 180);
+                drawwheel(r, 0, 0);
+                ctx.restore();
+            }
+
+            cloudrun();
+            grouprun();
+            wheelrun();
+
+            requestAnimationFrame(function () {
+                run();
+            });
+        }
+
+        run()
+    }
+
+    draw()
+</script>
+</body>
+</html>
